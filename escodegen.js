@@ -593,6 +593,22 @@
      * convert generated to a SourceNode when source maps are enabled.
      */
     function toSourceNodeWhenNeeded(generated, node) {
+        if (node != null) {
+          if (node.prepend != null && node.prepend.length > 0) {
+            if (isArray(generated)) {
+              generated = node.prepend.concat(generated);
+            } else {
+              generated = node.prepend.join('') + generated;
+            }
+          }
+          if (node.append != null && node.append.length > 0) {
+            if (isArray(generated)) {
+              generated = generated.concat(node.append);
+            } else {
+              generated = generated + node.append.join('');
+            }
+          }
+        }
         if (!sourceMap) {
             // with no source maps, generated is either an
             // array or a string.  if an array, flatten it.
