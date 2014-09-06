@@ -725,18 +725,22 @@
     }
 
     function generateComment(comment, specialBase) {
-        if (comment.type === 'Line') {
-            if (endsWithLineTerminator(comment.value)) {
-                return '//' + comment.value;
-            } else {
-                // Always use LineTerminator
-                return '//' + comment.value + '\n';
-            }
+      if (comment.type === 'Line') {
+        if (endsWithLineTerminator(comment.value)) {
+          return '//' + comment.value;
+        } else {
+          // Always use LineTerminator
+          return '//' + comment.value + '\n';
         }
+      }
+      if (comment.type === 'Tag') {
+        return '/*#' + comment.value + ':*/';
+      } else {
         if (extra.format.indent.adjustMultilineComment && /[\n\r]/.test(comment.value)) {
-            return adjustMultilineComment('/*' + comment.value + '*/', specialBase);
+          return adjustMultilineComment('/*' + comment.value + '*/', specialBase);
         }
         return '/*' + comment.value + '*/';
+      }
     }
 
     function addComments(stmt, result) {
