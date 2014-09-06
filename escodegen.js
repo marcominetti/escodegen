@@ -259,6 +259,7 @@
             base: null,
             parse: null,
             comment: false,
+            tag : true,
             format: {
                 indent: {
                     style: '    ',
@@ -725,6 +726,19 @@
     }
 
     function generateComment(comment, specialBase) {
+      if (comment.type === 'Tag') {
+        if (extra.tag === false){
+          return '';
+        }
+        if (comment.inline === true){
+          return '/*#' + comment.value + ':*/' + (extra.compact===false) ? ' ' : '';
+        } else {
+          return '/*#' + comment.value + '*/';
+        }
+      }
+      if (extra.comment === false){
+        return '';
+      }
       if (comment.type === 'Line') {
         if (endsWithLineTerminator(comment.value)) {
           return '//' + comment.value;
@@ -733,14 +747,10 @@
           return '//' + comment.value + '\n';
         }
       }
-      if (comment.type === 'Tag') {
-        return '/*#' + comment.value + ':*/';
-      } else {
-        if (extra.format.indent.adjustMultilineComment && /[\n\r]/.test(comment.value)) {
-          return adjustMultilineComment('/*' + comment.value + '*/', specialBase);
-        }
-        return '/*' + comment.value + '*/';
+      if (extra.format.indent.adjustMultilineComment && /[\n\r]/.test(comment.value)) {
+        return adjustMultilineComment('/*' + comment.value + '*/\n', specialBase);
       }
+      return '/*' + comment.value + '*/\n';
     }
 
     function addComments(stmt, result) {
@@ -755,14 +765,14 @@
                 result.push('\n');
             }
             result.push(generateComment(comment));
-            if (!endsWithLineTerminator(toSourceNodeWhenNeeded(result).toString())) {
+            if ((comment.type === 'Tag' && comment.inline === false && extra.compact === false) && !endsWithLineTerminator(toSourceNodeWhenNeeded(result).toString())) {
                 result.push('\n');
             }
 
             for (i = 1, len = stmt.leadingComments.length; i < len; ++i) {
                 comment = stmt.leadingComments[i];
                 fragment = [generateComment(comment)];
-                if (!endsWithLineTerminator(toSourceNodeWhenNeeded(fragment).toString())) {
+                if ((comment.type === 'Tag' && comment.inline === false && extra.compact === false) && !endsWithLineTerminator(toSourceNodeWhenNeeded(fragment).toString())) {
                     fragment.push('\n');
                 }
                 result.push(addIndent(fragment));
@@ -811,7 +821,7 @@
     function maybeBlock(stmt, semicolonOptional, functionBody) {
         var result, noLeadingComment;
 
-        noLeadingComment = !extra.comment || !stmt.leadingComments;
+        noLeadingComment = !(extra.comment || extra.tag) || !stmt.leadingComments;
 
         if (stmt.type === Syntax.BlockStatement && noLeadingComment) {
             return [space, generateStatement(stmt, { functionBody: functionBody })];
@@ -830,7 +840,7 @@
 
     function maybeBlockSuffix(stmt, result) {
         var ends = endsWithLineTerminator(toSourceNodeWhenNeeded(result).toString());
-        if (stmt.type === Syntax.BlockStatement && (!extra.comment || !stmt.leadingComments) && !ends) {
+        if (stmt.type === Syntax.BlockStatement && (!(extra.comment || extra.tag) || !stmt.leadingComments) && !ends) {
             return [result, space];
         }
         if (ends) {
@@ -1004,7 +1014,7 @@
 
         function block() {
             node = stmt.declarations[0];
-            if (extra.comment && node.leadingComments) {
+            if ((extra.comment || extra.tag) && node.leadingComments) {
                 result.push('\n');
                 result.push(addIndent(generateStatement(node, {
                     allowIn: allowIn
@@ -1018,7 +1028,7 @@
 
             for (i = 1, iz = stmt.declarations.length; i < iz; ++i) {
                 node = stmt.declarations[i];
-                if (extra.comment && node.leadingComments) {
+                if ((extra.comment || extra.tag) && node.leadingComments) {
                     result.push(',' + newline);
                     result.push(addIndent(generateStatement(node, {
                         allowIn: allowIn
@@ -1871,7 +1881,7 @@
             throw new Error('Unknown expression type: ' + expr.type);
         }
 
-        if (extra.comment) {
+        if ((extra.comment || extra.tag)) {
             result = addComments(expr,result);
         }
         return toSourceNodeWhenNeeded(result, expr);
@@ -2513,7 +2523,7 @@
 
         // Attach comments
 
-        if (extra.comment) {
+        if ((extra.comment || extra.tag)) {
             result = addComments(stmt, result);
         }
 
