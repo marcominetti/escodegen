@@ -595,6 +595,8 @@
     function toSourceNodeWhenNeeded(generated, node) {
         if (node != null) {
           if (node.prepend != null && node.prepend.length > 0) {
+            node.prepend.unshift('/*>*/');
+            node.prepend.push('/*<*/');
             if (isArray(generated)) {
               generated = node.prepend.concat(generated);
             } else {
@@ -602,6 +604,8 @@
             }
           }
           if (node.append != null && node.append.length > 0) {
+            node.append.unshift('/*>*/');
+            node.append.push('/*<*/');
             if (isArray(generated)) {
               generated = generated.concat(node.append);
             } else {
